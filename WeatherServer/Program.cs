@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using WeatherServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,13 +13,47 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c => {
+    c.SwaggerDoc("v1", new()
+    {
+        Contact = new()
+        {
+            Email = "fmoreno1@csun.edu",
+            Name = "Felix Moreno",
+            Url = new("https://canvas.csun.edu/courses/128137")
+        },
+        Description = "APIs for World Cities",
+        Title = "World Cities APIs",
+        Version = "V1"
+    });
+    OpenApiSecurityScheme jwtSecurityScheme = new()
+    {
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Name = "JWT Authentication",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Description = "Please enter *only* JWT token",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+    c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, jwtSecurityScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, [] }
+    });
+});
 
 //WE NEED TO ADD DBCONTEXT SERVICE IN HERE
 //We are adding IdentityContext to tables
 //404 error, Security trumps architecture (method does exist but server doesn't let user know it exists, security in Microsoft does this, maybe to prevent hackers)
 
 //Next is to build authentication. (OCTA instead of sql-Server).
+
+
 
 builder.Services.AddDbContext<CountriesSilverContext>(options => 
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -48,7 +84,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 //Injection
-builder.Services.AddScoped<JwtBearerHandler>();
+builder.Services.AddScoped<JwtHandler>();
 
 
 //Three ways to inject, 
